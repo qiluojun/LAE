@@ -1,5 +1,18 @@
 # 更新日志
 
+## [0.1.4] - 2025-07-26
+
+### 新增 (Added)
+- 创建了状态问卷UI页面 `lae_app/lib/pages/status_survey_page.dart`，包含文本输入、评分选择和滑块控件。
+- 引入 `flutter_local_notifications` 和 `timezone` 依赖，以实现定时本地通知功能。
+- 创建了 `lae_app/lib/services/notification_service.dart`，用于封装和管理本地通知的初始化、调度和响应逻辑。
+- 在应用启动时，实现了每日23:00定时发送问卷通知的功能。
+
+### 变更 (Changed)
+- 在 `lae_app/lib/` 下创建了 `pages/` 目录，用于存放UI页面文件，以优化项目结构。
+- 更新了 `lae_app/lib/main.dart`，增加了全局 `NavigatorKey` 和路由 `/survey`，用于处理通知点击后的页面跳转。
+
+
 ## [0.1.3] - 2025-07-13-2
 
 ### 变更 (Changed)
