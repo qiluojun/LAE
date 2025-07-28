@@ -1,4 +1,38 @@
 # 更新日志
+## [0.1.6] - 2025-07-28
+
+### 变更 (Changed)
+- **问卷功能重构**:
+    - 根据开发计划，将状态问卷中的“睡眠质量”、“LAE状态”等评分项从离散选择改为 `Slider` 控件，支持0.1步长的精细打分。
+    - 将“昨晚睡着时间”和“今早离开床的时间”从自由文本输入改为 `ChoiceChip` 单选题，优化了输入体验。
+    - 在 `status_record.dart` 模型中，将对应的评分字段类型从 `int` 修改为 `double`。
+- **数据库结构更新**:
+    - 在 `database_helper.dart` 中更新了 `status_records` 表的 `CREATE TABLE` 语句，将评分相关的列类型从 `INTEGER` 改为 `REAL`，并添加了新字段。
+
+### 新增 (Added)
+- **问卷内容扩充**:
+    - 在状态问卷中增加了三个新问题：“昨夜入睡用时”（单选）、“今早起床用时”（单选）和“睡眠相关异常情况”（自由输入）。
+    - 相应地，在 `status_record.dart` 数据模型和 `status_records` 数据库表中添加了 `timeToFallAsleep`, `timeToGetUp`, `sleepAbnormalities` 字段。
+
+### 修复 (Fixed)
+- **数据显示不完整**: 修复了历史记录详情弹窗 (`records_display_page.dart`) 未显示所有问卷项的问题，现在可以完整展示包括新增字段在内的所有数据。
+- **问卷提交逻辑**: 移除了问卷页面的输入校验，允许所有题目留空提交，符合“全部非必答题”的要求。
+
+
+## [0.1.5] - 2025-07-27
+
+### 新增 (Added)
+- 在主界面添加了“查看历史状态记录”按钮，允许用户浏览所有已提交的问卷数据。
+- 创建了新的UI页面 `lae_app/lib/pages/records_display_page.dart`，用于以列表形式展示历史记录。
+- 在 `database_helper.dart` 中添加了 `getAllStatusRecords` 方法，用于从本地数据库中按时间倒序查询所有状态记录。
+- 引入 `intl` 包以优化日期和时间的显示格式。
+
+### 变更 (Changed)
+- 在 `status_record.dart` 模型中添加了 `fromMap` 工厂构造函数，方便将数据库查询结果转换为对象。
+
+### 修复 (Fixed)
+- 修正了 `database_helper.dart` 中 `getAllStatusRecords` 方法的定义位置，解决了其无法被外部调用的编译错误。
+
 
 ## [0.1.4] - 2025-07-26
 

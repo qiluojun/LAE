@@ -15,56 +15,45 @@
 /// - 如果未来问卷项目增加，可在此文件中添加新的字段。
 /// - 可以考虑添加数据校验逻辑。
 ///
-
+// ...existing code...
 class StatusRecord {
   final int? id; // 数据库中的唯一ID，自增主键，可以为空
   final DateTime recordTime; // 记录创建时间
 
   // 问卷项目
-  final String sleepTime; // 昨晚睡眠时间 (格式: "HH:mm")
-  final String wakeUpTime; // 今早起床时间 (格式: "HH:mm")
-  final int sleepQuality; // 睡眠质量 (1-5分)
-  final int laeState; // LAE状态评估 (1-5分)
-  final int exerciseState; // 运动状态评估 (1-5分)
-  final int researchState; // 科研状态评估 (1-5分)
-  final String dietInfo; // 饮食情况 (文本输入)
-  final double anxietyLevel; // 当前焦虑水平 (1.0-5.0)
-  final double overallState; // 当前整体状态 (1.0-5.0)
+  final String? sleepTime; // 昨晚睡着时间 (单选)
+  final String? wakeUpTime; // 今早离开床的时间 (单选)
+  final double? sleepQuality; // 睡眠质量 (Slider, 1.0-5.0)
+  final double? laeState; // LAE状态评估 (Slider, 1.0-5.0)
+  final double? exerciseState; // 运动状态评估 (Slider, 1.0-5.0)
+  final double? researchState; // 科研状态评估 (Slider, 1.0-5.0)
+  final String? dietInfo; // 饮食情况 (文本输入)
+  final double? anxietyLevel; // 当前焦虑水平 (1.0-5.0)
+  final double? overallState; // 当前整体状态 (1.0-5.0)
   final String? remarks; // 备注 (可以为空)
+
+  // 新增字段
+  final String? timeToFallAsleep; // 昨夜入睡用时 (单选)
+  final String? timeToGetUp; // 今早起床用时 (单选)
+  final String? sleepAbnormalities; // 睡眠相关异常情况 (自由输入)
 
   StatusRecord({
     this.id,
     required this.recordTime,
-    required this.sleepTime,
-    required this.wakeUpTime,
-    required this.sleepQuality,
-    required this.laeState,
-    required this.exerciseState,
-    required this.researchState,
-    required this.dietInfo,
-    required this.anxietyLevel,
-    required this.overallState,
+    this.sleepTime,
+    this.wakeUpTime,
+    this.sleepQuality,
+    this.laeState,
+    this.exerciseState,
+    this.researchState,
+    this.dietInfo,
+    this.anxietyLevel,
+    this.overallState,
     this.remarks,
+    this.timeToFallAsleep,
+    this.timeToGetUp,
+    this.sleepAbnormalities,
   });
-
-  /// 将Map对象转换为StatusRecord对象
-  factory StatusRecord.fromMap(Map<String, dynamic> map) {
-    return StatusRecord(
-      id: map['id'],
-      // 将存储的ISO 8601字符串转回DateTime对象
-      recordTime: DateTime.parse(map['recordTime']),
-      sleepTime: map['sleepTime'],
-      wakeUpTime: map['wakeUpTime'],
-      sleepQuality: map['sleepQuality'],
-      laeState: map['laeState'],
-      exerciseState: map['exerciseState'],
-      researchState: map['researchState'],
-      dietInfo: map['dietInfo'],
-      anxietyLevel: map['anxietyLevel'],
-      overallState: map['overallState'],
-      remarks: map['remarks'],
-    );
-  }
 
   /// 将StatusRecord对象转换为Map对象，以便存入数据库
   Map<String, dynamic> toMap() {
@@ -82,6 +71,30 @@ class StatusRecord {
       'anxietyLevel': anxietyLevel,
       'overallState': overallState,
       'remarks': remarks,
+      'timeToFallAsleep': timeToFallAsleep,
+      'timeToGetUp': timeToGetUp,
+      'sleepAbnormalities': sleepAbnormalities,
     };
+  }
+
+  // 新增：从 Map 创建 StatusRecord 对象的工厂构造函数
+  factory StatusRecord.fromMap(Map<String, dynamic> map) {
+    return StatusRecord(
+      id: map['id'],
+      recordTime: DateTime.parse(map['recordTime']),
+      sleepTime: map['sleepTime'],
+      wakeUpTime: map['wakeUpTime'],
+      sleepQuality: map['sleepQuality'],
+      laeState: map['laeState'],
+      exerciseState: map['exerciseState'],
+      researchState: map['researchState'],
+      dietInfo: map['dietInfo'],
+      anxietyLevel: map['anxietyLevel'],
+      overallState: map['overallState'],
+      remarks: map['remarks'],
+      timeToFallAsleep: map['timeToFallAsleep'],
+      timeToGetUp: map['timeToGetUp'],
+      sleepAbnormalities: map['sleepAbnormalities'],
+    );
   }
 }
