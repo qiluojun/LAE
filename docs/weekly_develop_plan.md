@@ -7,7 +7,7 @@
         记得调用对应的prompt
             README里对应位置有prompt 
 
-# 单次开发计划 7.26-28
+# 单次开发计划 7.26-8.2
 
 **核心目标：** 实现一个在23:00定时触发的状态问卷功能，并在手机端完成数据记录。
 
@@ -91,15 +91,26 @@
 目标：将本地存储的数据上传到Supabase。
 
 -   **任务1：设计云端数据表**
-    -   在 `database/schema.sql` 中，为状态问卷设计一个新的数据表 `StatusRecords`。
+    -   在 `database/schema.sql` 中，为状态问卷设计一个新的数据表 `survey_records`。
 
 -   **任务2：开发上传功能**
-    -   在Flutter应用中，编写一个函数，用于读取本地数据库中尚未上传的状态记录，并通过Supabase API将其批量上传到云端。
-    -   （可选）可以在应用启动时或提交问卷成功后调用此上传函数。
+    -   在Flutter应用中，编写一个函数，用于读取本地数据库中的状态记录，并通过Supabase API将其批量上传到云端。
+        - 需要思考如何避免重复上传。如果直接把本地的所有数据都上传到云端，借助supabase的CONSTRAINT（record_time, survey_type组合防重）不知道是否可行。
+    -   在主界面增加按钮，调用上传数据功能
+
+- 任务3 修复上传bug 
+    - 目前supabase有两条记录，本地端有五条（新增了一条）。点击按钮上传，报错：I/flutter (22887): Error uploading new records: PostgrestException(message: duplicate key value violates unique constraint "survey_records_record_time_survey_type_key", code: 23505, details: Key (record_time, survey_type)=(2025-08-02 15:00:45.610049+00, daily_status_check) already exists., hint: null)
+    但是supabase_service.dart里应该实现了先获得云端已有记录的record_time, survey_type，然后把本地不重复的数据上传上去。因此不该有这个报错。并且脚本还特意注意了时间戳的精度以及时区的问题。那么问题出在哪里呢?
+        我需要找个办法 看到每次从云端获得的 比较的 上传的 内容到底是什么
+        如果这个流程没问题 那么可能问题出在error是错的（概率小）
+    终于修好了 主要是时间戳格式和时区的问题 现在统一以世界时上传到云端以及进行比较
+- 任务4： 补充删除功能
+    不知道为啥 历史状态记录的删除功能没了
+    删除功能：历史状态记录页面 单击某条记录 弹出新窗口 可以查看记录的完整内容 并且在关闭按钮的左边有个删除按钮 点击后删除本条数据 
+- 任务5：更新schema 底部的记录
 
 
-
-# 下周开发计划 (7.29 - 8.2)
+# 下周开发计划 
 
 **核心目标：** 设计并开发“主支线任务管理系统”的最小可行产品 ，实现对长短期目标的层级化跟踪与管理。
 

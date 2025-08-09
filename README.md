@@ -112,7 +112,7 @@ LAE-System/
 │   └── schema.sql            <-- 数据表结构定义
 ├── docs/
 │   ├── quest_objective_system_design.md <-- 主支线任务与目标系统的设计文档
-│   ├── weekly_develop_plan.md <-- 本周详细开发计划和任务拆解
+│   └── weekly_develop_plan.md <-- 本周详细开发计划和任务拆解
 ├── lae_app/                  <-- Flutter移动端应用
 │   ├── .dart_tool/           <-- Dart工具缓存
 │   ├── .flutter-plugins      <-- Flutter插件配置
@@ -136,7 +136,8 @@ LAE-System/
 │   │   │   └── status_survey_page.dart <-- 状态问卷UI页面
 │   │   ├── services/
 │   │   │   ├── database_helper.dart <-- 本地数据库辅助类
-│   │   │   └── notification_service.dart <-- 本地通知服务类
+│   │   │   ├── notification_service.dart <-- 本地通知服务类
+│   │   │   └── supabase_service.dart <-- Supabase云端同步服务类
 │   │   └── main.dart         <-- Flutter应用主入口
 │   ├── linux/                <-- Linux平台配置
 │   ├── macos/                <-- macOS平台配置
@@ -150,9 +151,6 @@ LAE-System/
 ├── CHANGELOG.md              <-- 项目开发日志和版本记录
 └── README.md                 <-- 项目整体说明，项目结构和入门指南
 ```
-
-
----
 
 ## 核心文件和文件夹详细说明
 
@@ -177,8 +175,9 @@ Flutter跨平台移动应用，主要功能：
   - **`status_survey_page.dart`**: 每日状态问卷的UI界面，使用单选、滑块和文本框等多种控件收集用户输入。
   - **`records_display_page.dart`**: 用于从本地数据库读取并以列表和弹窗形式展示历史状态记录的UI界面。
 - **`lib/services/`**: 存放后台服务类，如API请求、数据库操作、通知等。
-  - **`database_helper.dart`**: 本地SQLite数据库的辅助类，封装了数据库的初始化和对`status_records`表的CRUD操作。
+  - **`database_helper.dart`**: 本地SQLite数据库的辅助类，封装了数据库的初始化和对`status_records`表的CRUD（增删改查）操作。
   - **`notification_service.dart`**: 负责处理本地定时通知的创建和调度。
+  - **`supabase_service.dart`**: 负责将本地数据库的记录同步到Supabase云端，并处理数据去重逻辑。
 - **用户界面**: 状态输入、活动展示、干预提醒等。
 - **数据交互**: 与后端Python脚本的数据交换。
 - **多平台支持**: Android、iOS、Web、Desktop。

@@ -1,4 +1,25 @@
 # 更新日志
+
+
+
+## [0.1.7] - 2025-08-09
+
+### 新增 (Added)
+- **云端同步功能**:
+    - 在 `lae_app/lib/services/` 目录下创建了 `supabase_service.dart`，用于处理本地数据到Supabase的上传。
+    - 实现了将本地 `status_records` 表中的问卷数据上传到云端 `survey_records` 表的逻辑。
+- **记录删除功能**:
+    - 在 `database_helper.dart` 中添加了 `deleteStatusRecord` 方法。
+    - 在历史记录详情弹窗 (`records_display_page.dart`) 中增加了“删除”按钮，允许用户删除本地存储的问卷记录。
+
+### 修复 (Fixed)
+- **云端同步重复上传**: 解决了数据上传时因时间戳格式和时区问题导致的重复上传错误。现在通过将所有时间转换为UTC标准格式进行比较和上传，确保了数据同步的幂等性。
+
+### 文档 (Documentation)
+- 在 `database/schema.sql` 中为 `survey_records` 表添加了完整的表和列注释。
+- 更新了 `database/schema.sql` 底部的数据库同步说明，以反映 `survey_records` 表的数据流向。
+
+
 ## [0.1.6] - 2025-07-28
 
 ### 变更 (Changed)

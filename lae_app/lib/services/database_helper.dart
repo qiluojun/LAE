@@ -77,6 +77,15 @@ class DatabaseHelper {
     );
   }
 
+  Future<int> deleteStatusRecord(int id) async {
+    final db = await database;
+    return await db.delete(
+      'status_records',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
   // 新增：获取所有状态记录的方法
   // 这个方法应该在这里，作为 DatabaseHelper 类的一部分
   Future<List<StatusRecord>> getAllStatusRecords() async {

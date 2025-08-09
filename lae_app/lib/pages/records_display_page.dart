@@ -33,6 +33,13 @@ class _RecordsDisplayPageState extends State<RecordsDisplayPage> {
     );
   }
 
+  // 新增：刷新记录列表的函数
+  void _refreshRecords() {
+    setState(() {
+      _recordsFuture = DatabaseHelper().getAllStatusRecords();
+    });
+  }
+
   // 新增：显示详情弹窗的函数
   void _showRecordDetails(BuildContext context, StatusRecord record) {
     showDialog(
@@ -65,6 +72,22 @@ class _RecordsDisplayPageState extends State<RecordsDisplayPage> {
             ),
           ),
           actions: <Widget>[
+            TextButton(
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('删除'),
+              onPressed: () async {
+                if (record.id != null) {
+                  await DatabaseHelper().deleteStatusRecord(record.id!);
+                  if (mounted) {
+                    Navigator.of(context).pop(); // Close the dialog
+                    _refreshRecords(); // Refresh the list
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('记录已删除')),
+                    );
+                  }
+                }
+              },
+            ),
             TextButton(
               child: const Text('关闭'),
               onPressed: () {

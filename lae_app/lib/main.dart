@@ -3,11 +3,13 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:lae_app/services/notification_service.dart';
 import 'package:lae_app/services/database_helper.dart';
 import 'package:lae_app/pages/status_survey_page.dart';
-import 'package:lae_app/pages/records_display_page.dart'; // 导入新页面
+import 'package:lae_app/pages/records_display_page.dart';
+import 'package:lae_app/services/supabase_service.dart'; // Import Supabase service
 
 // 全局变量，方便在其他地方访问服务实例
 final NotificationService notificationService = NotificationService();
 final DatabaseHelper databaseHelper = DatabaseHelper();
+final SupabaseService supabaseService = SupabaseService(); // Create an instance
 
 // 为Navigator创建GlobalKey，以便在应用外部导航
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -27,6 +29,9 @@ Future<void> main() async {
 
   // 初始化所有服务
   try {
+    // Initialize Supabase
+    await SupabaseService.initialize();
+
     // 将回调函数作为命名参数传递给init方法
     await notificationService.init(
         onDidReceiveNotificationResponse: onDidReceiveNotificationResponse);
@@ -62,8 +67,15 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  bool _isUploading = false;
 
   // 导航到问卷页面的辅助函数
   void _navigateToSurveyPage(BuildContext context) {
@@ -79,6 +91,26 @@ class HomePage extends StatelessWidget {
       context,
       MaterialPageRoute(builder: (context) => const RecordsDisplayPage()),
     );
+  }
+
+  // 新增：处理数据上传的函数
+  Future<void> _handleUpload() async {
+    setState(() {
+      _isUploading = true;
+    });
+
+    await supabaseService.uploadStatusRecords();
+
+    setState(() {
+      _isUploading = false;
+    });
+
+    // Optionally, show a confirmation dialog
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Upload process completed!')),
+      );
+    }
   }
 
   @override
@@ -114,6 +146,18 @@ class HomePage extends StatelessWidget {
                 textStyle: const TextStyle(fontSize: 18),
               ),
               child: const Text('查看历史状态记录'),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _isUploading ? null : _handleUpload,
+              style: ElevatedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                textStyle: const TextStyle(fontSize: 18),
+              ),
+              child: _isUploading
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text('上传数据到云端'),
             ),
           ],
         ),
