@@ -1,4 +1,16 @@
 # 更新日志
+## [0.2.0] - 2025-08-12
+
+### 新增 (Added)
+- **提醒&日程管理系统框架**:
+    - 在 `database/schema.sql` 中为本地SQLite和云端Supabase数据库正式定义了 `Quests` (主支线任务), `Schedules` (具体日程), 和 `Routine_Plan` (作息规则) 的表结构，为新的核心功能奠定数据基础。
+- **Obsidian笔记库集成**:
+    - 创建了新的Python脚本 `src/ob_quest.py`。该脚本能够扫描指定的Obsidian笔记库目录，根据文件夹层级结构和文件元数据（如【id】）自动生成并填充本地数据库中的 `Quests` 表，实现了从知识库到任务系统的自动化数据录入。
+
+### 文档 (Documentation)
+- 在 `docs/weekly_develop_plan.md` 中制定了“提醒&日程管理系统”的详细开发计划。并且更新了`docs\quest_objective_system_design.md`.
+- 更新了 `README.md` 中的项目结构和核心文件说明，以包含新添加的 `ob_quest.py` 脚本和数据库表。
+
 
 
 

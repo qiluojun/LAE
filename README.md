@@ -147,7 +147,8 @@ LAE-System/
 ├── prompts/
 │   └── prompts.md            <-- AI指令库，存储项目相关的AI提示词
 ├── src/
-│   └── supabase_client.py    <-- 核心Python脚本，处理数据同步
+│   ├── ob_quest.py           <-- Obsidian笔记库到Quest表的同步脚本
+│   └── supabase_client.py    <-- 核心Python脚本，处理与云端的数据同步
 ├── CHANGELOG.md              <-- 项目开发日志和版本记录
 └── README.md                 <-- 项目整体说明，项目结构和入门指南
 ```
@@ -155,16 +156,12 @@ LAE-System/
 ## 核心文件和文件夹详细说明
 
 ### 1. 数据库层 (`database/`)
-- **`schema.sql`**: 定义系统的数据表结构，包括用户状态表、活动表、规则表等。
+- **`schema.sql`**: 定义系统的数据表结构。包含了用户状态、活动、风险模式、系统触发器，以及最新的 `Quests` (主支线任务), `Schedules` (日程), `Routine_Plan` (作息) 等核心功能的表定义。
 - **`data_base.db`**: 本地SQLite数据库文件，存储实际的业务数据。
 
 ### 2. 后端核心 (`src/`)
-- **`supabase_client.py`**: 系统的"大脑"，负责：
-  - 数据处理和分析
-  - 状态评估算法
-  - 活动推荐逻辑
-  - 干预决策引擎
-  - 与Supabase云服务的数据同步
+- **`ob_quest.py`**: 用于集成Obsidian笔记库的Python脚本。它通过扫描指定的文件夹结构，自动解析并生成层级化的任务（Quests），并将其存入本地数据库，实现知识管理到任务管理的无缝衔接。
+- **`supabase_client.py`**: 系统的"大脑"，负责处理与Supabase云服务的数据同步，是连接PC端逻辑与多平台数据的桥梁。
 
 ### 3. 移动端应用 (`lae_app/`)
 Flutter跨平台移动应用，主要功能：
