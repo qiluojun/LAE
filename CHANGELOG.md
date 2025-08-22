@@ -1,4 +1,26 @@
 # 更新日志
+## [0.2.1] - 2025-08-22
+
+### 新增 (Added)
+- **手机端数据同步服务**: 扩展了 `supabase_service.dart` 的功能，实现了在应用启动时或通过手动按钮，从云端拉取 `Quests`, `Schedules`, `Routine_Plan`, 和 `Reminders` 表的全部数据。
+- **本地数据缓存**: 在 `database_helper.dart` 中增加了通用的 `replaceAll` 方法，用于将从云端获取的数据高效地存入并更新本地SQLite数据库。
+- **数据验证页面**: 创建了新的只读页面 `planning_data_display_page.dart`，用于直观地展示和验证从云端同步到本地的所有日程规划类数据，确保了数据流的正确性。
+- **提醒表结构**: 在 `database/schema.sql` 中为本地SQLite和云端Supabase新增了 `Reminders` 表。该表设计灵活，使用JSON字段存储触发和重复规则，为未来实现从简单到复杂的各类提醒功能提供了扩展性。
+- **初始提醒数据**: 基于 `Routine_Plan` 中的固定日程，生成并填充了初始的提醒数据到 `Reminders` 表中，为核心的作息时间点创建了基础的弹窗提醒。
+
+### 文档 (Documentation)
+- 更新了 `README.md` 中的项目结构和核心文件说明，加入了对 `Reminders` 表的描述。
+- 更新了 `database/schema.sql` 文件末尾的“数据库同步说明”，将 `Reminders` 表纳入数据流转的描述中。
+### 变更 (Changed)
+- **UI优化**: 改进了 `planning_data_display_page.dart` 的UI，使用可折叠的 `ExpansionTile` 控件来展示每个数据表，解决了数据过多导致屏幕拥挤的问题，提升了可读性。
+
+### 修复 (Fixed)
+- **数据库迁移问题**: 通过在 `database_helper.dart` 中增加数据库版本号并实现 `onUpgrade` 逻辑，修复了因数据库结构更新而导致的 "no such table" 错误，确保了应用在升级后能正确创建新表。
+- **云端数据同步错误**:
+    - 解决了因Supabase表名大小写敏感导致的 "relation does not exist" 42P01错误。
+    - 修复了将复杂数据类型（如Map, List, Boolean）直接存入SQLite导致的 `DatabaseException`。通过在存入前将数据序列化为JSON字符串或整型，保证了数据类型的兼容性。
+    - 修复了因API密钥失效导致的 "Invalid API key" 401认证错误。
+
 ## [0.2.0] - 2025-08-12
 
 ### 新增 (Added)

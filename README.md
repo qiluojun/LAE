@@ -96,7 +96,6 @@ Fitbit 手表 依然作为主要的 被动数据采集端点。
 LAE是一个个人自我调节系统，实现"记录→分析→预测→干预"的完整闭环。项目采用多平台架构，包含Python后端、Flutter移动端和数据库组件。
 
 ---
-
 ## 项目结构
 
 ```
@@ -132,6 +131,7 @@ LAE-System/
 │   │   ├── models/
 │   │   │   └── status_record.dart <-- 状态记录数据模型
 │   │   ├── pages/
+│   │   │   ├── planning_data_display_page.dart <-- 同步的计划数据只读展示页面
 │   │   │   ├── records_display_page.dart <-- 历史记录展示UI页面
 │   │   │   └── status_survey_page.dart <-- 状态问卷UI页面
 │   │   ├── services/
@@ -156,25 +156,26 @@ LAE-System/
 ## 核心文件和文件夹详细说明
 
 ### 1. 数据库层 (`database/`)
-- **`schema.sql`**: 定义系统的数据表结构。包含了用户状态、活动、风险模式、系统触发器，以及最新的 `Quests` (主支线任务), `Schedules` (日程), `Routine_Plan` (作息) 等核心功能的表定义。
+- **`schema.sql`**: 定义系统的数据表结构。包含了用户状态、活动、风险模式、系统触发器，以及 `Quests` (主支线任务), `Schedules` (日程), `Routine_Plan` (作息), 和 `Reminders` (提醒) 等核心功能的表定义。
 - **`data_base.db`**: 本地SQLite数据库文件，存储实际的业务数据。
 
 ### 2. 后端核心 (`src/`)
 - **`ob_quest.py`**: 用于集成Obsidian笔记库的Python脚本。它通过扫描指定的文件夹结构，自动解析并生成层级化的任务（Quests），并将其存入本地数据库，实现知识管理到任务管理的无缝衔接。
-- **`supabase_client.py`**: 系统的"大脑"，负责处理与Supabase云服务的数据同步，是连接PC端逻辑与多平台数据的桥梁。
+- **`supabase_client.py`**: 系统的"大脑"，负责将本地数据库 (`data_base.db`) 中的核心规划数据（如Quests, Schedules等）单向同步至Supabase云端，是连接PC端决策与多平台数据的桥梁。
 
 ### 3. 移动端应用 (`lae_app/`)
 Flutter跨平台移动应用，主要功能：
-- **`lib/main.dart`**: 应用主入口，负责初始化、定义应用结构和路由。
+- **`lib/main.dart`**: 应用主入口，负责初始化服务、定义应用结构和路由、并在启动时触发数据同步。
 - **`lib/models/`**: 存放数据模型类。
   - **`status_record.dart`**: 定义状态记录的数据结构，包含睡眠、各项状态评分、饮食、备注等字段。
 - **`lib/pages/`**: 存放应用的所有UI页面。
   - **`status_survey_page.dart`**: 每日状态问卷的UI界面，使用单选、滑块和文本框等多种控件收集用户输入。
   - **`records_display_page.dart`**: 用于从本地数据库读取并以列表和弹窗形式展示历史状态记录的UI界面。
+  - **`planning_data_display_page.dart`**: 一个只读页面，用于展示从云端同步到本地的所有规划数据（任务、日程、作息、提醒），方便验证数据同步的正确性。
 - **`lib/services/`**: 存放后台服务类，如API请求、数据库操作、通知等。
-  - **`database_helper.dart`**: 本地SQLite数据库的辅助类，封装了数据库的初始化和对`status_records`表的CRUD（增删改查）操作。
+  - **`database_helper.dart`**: 本地SQLite数据库的辅助类，封装了数据库的初始化、版本迁移（`onUpgrade`）和对所有表的CRUD（增删改查）操作。
   - **`notification_service.dart`**: 负责处理本地定时通知的创建和调度。
-  - **`supabase_service.dart`**: 负责将本地数据库的记录同步到Supabase云端，并处理数据去重逻辑。
+  - **`supabase_service.dart`**: 负责与Supabase云端进行双向数据同步。它既能将本地的问卷数据上传到云端，也能从云端拉取最新的规划数据并存入本地数据库。
 - **用户界面**: 状态输入、活动展示、干预提醒等。
 - **数据交互**: 与后端Python脚本的数据交换。
 - **多平台支持**: Android、iOS、Web、Desktop。
@@ -199,4 +200,4 @@ Flutter跨平台移动应用，主要功能：
 ---
 
 
-*最后更新时间: 2025-07-28*
+*最后更新时间: 2025-08-22*

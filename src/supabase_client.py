@@ -3,173 +3,140 @@
 """
 Supabase客户端模块
 
-负责处理本地Python环境与Supabase数据库之间的所有通信，
-包括数据的读取、写入，以及实时监听（未来实现）。
+负责处理本地Python环境与Supabase数据库之间的所有通信。
+核心功能是实现本地SQLite数据库到云端Supabase的单向数据同步。
 """
 
 # 1. 导入必要的库
 import os
-import time
-from datetime import datetime
+import sqlite3
+import json
 from supabase import create_client, Client
 
-# --- 初始化与连接 (脚本开始时执行一次) ---
+# --- 初始化与连接 ---
 
 print("LAE 核心引擎启动...")
 
 # 2. 配置 Supabase 连接
-# 建议使用环境变量来存储密钥，而不是直接写在代码里。
-# 但为了演示方便，我们先直接写在这里。
 SUPABASE_URL = "https://vwryhiqjlclhkhczpyza.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3cnloaXFqbGNsaGtoY3pweXphIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTE3NDU1OSwiZXhwIjoyMDY2NzUwNTU5fQ.eaum2sXRrjfA-gAub9EcW_8vmnDXmiCljoxwKEhrnw4" # 替换成你的 service_role Key
+# 强烈建议使用环境变量来存储密钥，而不是直接写在代码里。
+# 为了安全，请在实际部署时替换为环境变量。
+SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3cnloaXFqbGNsaGtoY3pweXphIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTE3NDU1OSwiZXhwIjoyMDY2NzUwNTU5fQ.eaum2sXRrjfA-gAub9EcW_8vmnDXmiCljoxwKEhrnw4")
 
 try:
-    # 3. 创建 Supabase 客户端实例
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-    print("成功连接到 Supabase！")
+    print("Supabase 连接成功。")
 except Exception as e:
-    print(f"连接 Supabase 失败: {e}")
-    exit() # 如果连接失败，直接退出程序
+    print(f"Supabase 连接失败: {e}")
+    exit()
 
-# 4. 初始化内存中的状态变量
-# 这个字典用于跟踪夜间App使用次数
-app_usage_counter = {
-    'bilibili': 0,
-    'xiaohongshu': 0
-}
-# 记录上次检查 user_inputs 表的时间戳，避免重复处理
-last_checked_timestamp = datetime.utcnow().isoformat()
+# 3. 配置本地数据库路径
+# 使用相对路径定位到项目根目录下的 database 文件夹
+DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'database', 'data_base.db')
 
-# --- 核心逻辑循环 (持续运行) ---
-
-def main_loop():
-    """
-    核心函数，作为程序的入口和主干。
-
-    此函数包含一个无限循环 (while True)，永不停止，除非手动中断。
-    循环内主要执行三个任务：
-    A. 定时任务检查：根据预设的硬编码时间（如20:00和00:00）执行特定操作。
-    B. 用户输入轮询：从 Supabase 的 user_inputs 表中拉取新的用户事件。
-    C. 延时等待：在每次循环后暂停，以防止CPU占用过高。
-
-    全局变量:
-        last_checked_timestamp (str): 用于增量轮询，记录上次查询的时间点。
-        app_usage_counter (dict): 用于在内存中累计特定App的使用次数。
-    """
-    global last_checked_timestamp, app_usage_counter
-
-    while True:
-        current_time_str = datetime.now().strftime('%H:%M')
-        current_hour = datetime.now().hour
-
-        # --- A. 定时任务逻辑 ---
-        # 1. 检查是否到了20:00，触发自评提醒
-        if current_time_str == '20:00':
-            print("[定时任务] 20:00到达，触发风险自评提醒...")
-            supabase.table('system_outputs').insert({
-                "event_type": "SYSTEM_TRIGGER",
-                "source": "SYSTEM_PYTHON_ENGINE",
-                "action_to_perform": "REQUEST_SELF_ASSESSMENT",
-                "content": "现在是晚间八点，请进行风险自评。"
-            }).execute()
-            time.sleep(61) 
-
-        # 2. 检查是否到了午夜，清零计数器
-        if current_time_str == '00:00':
-            print("[定时任务] 午夜到达，清零App使用计数器...")
-            app_usage_counter = {'bilibili': 0, 'xiaohongshu': 0}
-            time.sleep(61)
-
-        # --- B. 轮询处理用户输入 ---
-        try:
-            # 查询 user_inputs 表中在上次检查之后的新记录
-            response = supabase.table('user_inputs').select('*').gt('timestamp', last_checked_timestamp).execute()
-            
-            if response.data:
-                print(f"检测到 {len(response.data)} 条新用户输入...")
-                for event in response.data:
-                    process_user_event(event, current_hour)
-                
-                # 更新最后检查的时间戳为最新一条记录的时间戳
-                last_checked_timestamp = response.data[-1]['timestamp']
-
-        except Exception as e:
-            print(f"查询 user_inputs 出错: {e}")
-
-        # --- C. 循环间隔 ---
-        # 每隔10秒检查一次，避免过于频繁地请求数据库
-        time.sleep(10)
-
-def process_user_event(event, current_hour):
-    """
-    事件处理器，根据从 user_inputs 表获取的单条事件记录进行逻辑分发和处理。
-
-    Args:
-        event (dict): 从 Supabase `user_inputs` 表中获取的单条事件记录。
-                      结构通常包含 'event_type', 'details', 'timestamp' 等字段。
-        current_hour (int): 当前的小时数 (0-23)，用于执行与时间相关的判断逻辑，
-                            例如判断是否处于夜间时段。
-
-    Returns:
-        None: 此函数没有返回值，它的主要作用是根据事件内容产生副作用，
-              即将决策结果（如提醒、干预指令）写入到 `system_outputs` 表中。
-    """
-    event_type = event.get('event_type')
-    details = event.get('details', {})
-
-    if event_type == 'STATE_CHECK_IN':
-        # 处理用户自评结果
-        print(f"[事件处理] 收到用户自评: {details}")
-        anxiety = details.get('anxiety_level', 0)
-        binge_risk = details.get('binge_eating_risk', 0)
-        
-        message = "状态良好，继续保持！"
-        if anxiety > 3 or binge_risk > 3:
-            message = "似乎有些压力，建议进行放松活动，比如听听音乐或进行5分钟冥想。"
-        
-        # 将反馈插入 system_outputs
-        supabase.table('system_outputs').insert({
-            "event_type": "INTERVENTION_TRIGGERED",
-            "source": "SYSTEM_PYTHON_ENGINE",
-            "intervention_type": "REMINDER",
-            "content": message
-        }).execute()
-
-    elif event_type == 'APP_USAGE_DETECTED':
-        # 处理模拟App使用事件
-        app_name = details.get('app_name')
-        print(f"[事件处理] 收到App使用模拟事件: {app_name}")
-
-        # 判断是否在22:00-24:00 (即 hour 是 22 或 23)
-        if app_name in ['bilibili', 'xiaohongshu'] and current_hour in [22, 23]:
-            app_usage_counter[app_name] += 1
-            count = app_usage_counter[app_name]
-            print(f"夜间使用 {app_name}，当前计数: {count}")
-
-            intervention_type = "REMINDER"
-            message = f"您已在夜间使用 {app_name} {count} 次，请注意休息哦。"
-
-            if count >= 3:
-                intervention_type = "LOCK_SCREEN" # 这是给手机端的指令类型
-                message = f"已多次检测到夜间娱乐应用使用 ({app_name})，即将触发锁屏（模拟）。"
-            
-            # 将干预指令插入 system_outputs
-            supabase.table('system_outputs').insert({
-                "event_type": "INTERVENTION_TRIGGERED",
-                "source": "SYSTEM_PYTHON_ENGINE",
-                "intervention_type": intervention_type,
-                "content": message
-            }).execute()
-
-
-if __name__ == '__main__':
-    """
-    脚本的标准启动入口。
-    
-    它调用 main_loop() 来启动整个程序，并使用 try...except 结构
-    来优雅地处理用户通过 Ctrl+C 发出的中断信号。
-    """
+def get_local_db_connection():
+    """建立并返回一个到本地SQLite数据库的连接。"""
     try:
-        main_loop()
-    except KeyboardInterrupt:
-        print("\nLAE 核心引擎已手动停止。")
+        conn = sqlite3.connect(DB_PATH)
+        # 设置 row_factory 以便将查询结果作为字典访问
+        conn.row_factory = sqlite3.Row
+        print(f"本地数据库连接成功: {DB_PATH}")
+        return conn
+    except sqlite3.Error as e:
+        print(f"本地数据库连接失败: {e}")
+        return None
+
+def sync_table(local_table_name: str, supabase_table_name: str, conn: sqlite3.Connection, supabase_client: Client):
+    """
+    通用的数据同步函数，将本地表数据同步到Supabase。
+    策略：先清空云端表，再插入本地所有数据。
+    """
+    print(f"--- 开始同步表: {local_table_name} -> {supabase_table_name} ---")
+    cursor = conn.cursor()
+    
+    try:
+        # 1. 从本地数据库读取数据
+        cursor.execute(f"SELECT * FROM {local_table_name}")
+        rows = cursor.fetchall()
+        
+        if not rows:
+            print(f"本地表 {local_table_name} 为空，跳过同步。")
+            # 仍然清空云端表以保持一致
+            supabase_client.table(supabase_table_name).delete().neq('id', -1).execute()
+            print(f"已清空云端表: {supabase_table_name}")
+            return
+
+        # 将 sqlite3.Row 对象转换为标准字典列表
+        # 同时处理JSON字符串，将其转换为Python对象
+        data_to_insert = []
+        for row in rows:
+            row_dict = dict(row)
+            for key, value in row_dict.items():
+                # 检查是否为JSON字符串
+                if isinstance(value, str) and value.strip().startswith(('[', '{')):
+                    try:
+                        row_dict[key] = json.loads(value)
+                    except json.JSONDecodeError:
+                        # 如果解析失败，则保持原样
+                        pass
+            data_to_insert.append(row_dict)
+
+        print(f"从本地表 {local_table_name} 读取了 {len(data_to_insert)} 条记录。")
+
+        # 2. 清空Supabase云端对应的表
+        # 使用 neq('id', -1) 作为删除所有行的安全方式
+        print(f"正在清空云端表: {supabase_table_name}...")
+        delete_response = supabase_client.table(supabase_table_name).delete().neq('id', -1).execute()
+        if delete_response.data:
+            print(f"成功清空 {len(delete_response.data)} 条记录。")
+        else:
+            print(f"云端表 {supabase_table_name} 已为空或清空失败。")
+
+        # 3. 将本地数据插入到Supabase
+        print(f"正在向云端表 {supabase_table_name} 插入数据...")
+        insert_response = supabase_client.table(supabase_table_name).insert(data_to_insert).execute()
+
+        if len(insert_response.data) == len(data_to_insert):
+            print(f"成功向 {supabase_table_name} 插入 {len(insert_response.data)} 条记录。")
+        else:
+            print(f"警告: 插入记录数与预期不符。预期: {len(data_to_insert)}, 实际: {len(insert_response.data)}")
+            # print("插入错误详情:", insert_response.error)
+
+    except sqlite3.Error as e:
+        print(f"同步表 {local_table_name} 时发生数据库错误: {e}")
+    except Exception as e:
+        print(f"同步表 {local_table_name} 时发生未知错误: {e}")
+    finally:
+        print(f"--- 表 {local_table_name} -> {supabase_table_name} 同步完成 ---\n")
+
+
+def main_sync():
+    """执行所有表的同步任务。"""
+    local_conn = get_local_db_connection()
+    if not local_conn:
+        return
+
+    # 定义需要同步的表名映射关系
+    # key: 本地SQLite表名 (大小写敏感)
+    # value: 云端Supabase表名 (通常为小写)
+    tables_to_sync = {
+        "Quests": "quests",
+        "Schedules": "schedules",
+        "Routine_Plan": "routine_plan", # 移到 Reminders 之前
+        "Reminders": "reminders"
+    }
+
+    try:
+        for local_table, supabase_table in tables_to_sync.items():
+            sync_table(local_table, supabase_table, local_conn, supabase)
+        
+        print("所有指定表的同步任务已执行。")
+
+    finally:
+        local_conn.close()
+        print("本地数据库连接已关闭。")
+        print("LAE 核心引擎本次同步任务完成。")
+
+# --- 主程序入口 ---
+if __name__ == "__main__":
+    main_sync()

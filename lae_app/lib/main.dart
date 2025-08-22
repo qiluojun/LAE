@@ -5,6 +5,7 @@ import 'package:lae_app/services/database_helper.dart';
 import 'package:lae_app/pages/status_survey_page.dart';
 import 'package:lae_app/pages/records_display_page.dart';
 import 'package:lae_app/services/supabase_service.dart'; // Import Supabase service
+import 'package:lae_app/pages/planning_data_display_page.dart'; // Import the new page
 
 // 全局变量，方便在其他地方访问服务实例
 final NotificationService notificationService = NotificationService();
@@ -40,6 +41,9 @@ Future<void> main() async {
 
     // 初始化数据库
     await databaseHelper.init();
+
+    // Sync planning data on startup
+    await supabaseService.syncPlanningData();
   } catch (e) {
     // 在调试控制台打印初始化错误
     debugPrint('Services initialization failed: $e');
@@ -76,6 +80,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   bool _isUploading = false;
+  bool _isSyncing = false; // Add state for planning data sync
 
   // 导航到问卷页面的辅助函数
   void _navigateToSurveyPage(BuildContext context) {
@@ -90,6 +95,14 @@ class _HomePageState extends State<HomePage> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const RecordsDisplayPage()),
+    );
+  }
+
+  // Add navigation to the new planning data page
+  void _navigateToPlanningDataPage(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const PlanningDataDisplayPage()),
     );
   }
 
@@ -109,6 +122,25 @@ class _HomePageState extends State<HomePage> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Upload process completed!')),
+      );
+    }
+  }
+
+  // Add a new handler for syncing planning data
+  Future<void> _handleSync() async {
+    setState(() {
+      _isSyncing = true;
+    });
+
+    await supabaseService.syncPlanningData();
+
+    setState(() {
+      _isSyncing = false;
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sync process completed!')),
       );
     }
   }
@@ -146,6 +178,28 @@ class _HomePageState extends State<HomePage> {
                 textStyle: const TextStyle(fontSize: 18),
               ),
               child: const Text('查看历史状态记录'),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () => _navigateToPlanningDataPage(context),
+              style: ElevatedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                textStyle: const TextStyle(fontSize: 18),
+              ),
+              child: const Text('查看计划数据'),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _isSyncing ? null : _handleSync,
+              style: ElevatedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                textStyle: const TextStyle(fontSize: 18),
+              ),
+              child: _isSyncing
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text('同步计划与提醒'),
             ),
             const SizedBox(height: 20),
             ElevatedButton(

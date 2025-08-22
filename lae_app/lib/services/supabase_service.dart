@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:lae_app/models/status_record.dart';
 import 'package:lae_app/services/database_helper.dart';
@@ -13,8 +14,61 @@ class SupabaseService {
       // Replace with your actual Supabase URL and Anon Key
       url: 'https://vwryhiqjlclhkhczpyza.supabase.co',
       anonKey:
-          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3cnloaXFqbGNsaGtoY3pweXphIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MTE3NDU1OSwiZXhwIjoyMDY2NzUwNTU5fQ.eaum2sXRrjfA-gAub9EcW_8vmnDXmiCljoxwKEhrnw4',
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3cnloaXFqbGNsaGtoY3pweXphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExNzQ1NTksImV4cCI6MjA2Njc1MDU1OX0.eKRdsQ6zXsUGhhAGQ6ByVjYmBcdlEiCVnPTE5wlJT3A',
     );
+  }
+
+  // Add a helper function to sanitize records for SQLite
+  Map<String, dynamic> _sanitizeRecordForSqlite(Map<String, dynamic> record) {
+    final sanitizedRecord = <String, dynamic>{};
+    record.forEach((key, value) {
+      if (value is Map || value is List) {
+        sanitizedRecord[key] =
+            jsonEncode(value); // Convert maps/lists to JSON strings
+      } else if (value is bool) {
+        sanitizedRecord[key] = value ? 1 : 0; // Convert booleans to integers
+      } else {
+        sanitizedRecord[key] = value;
+      }
+    });
+    return sanitizedRecord;
+  }
+
+  /// Fetches planning data from Supabase and stores it locally.
+  Future<void> syncPlanningData() async {
+    try {
+      print('Starting planning data sync...');
+      // Fetch data from all relevant tables in parallel.
+      // Using lowercase names as they are likely folded to lowercase in PostgreSQL.
+      final responses = await Future.wait([
+        _client.from('reminders').select(),
+        _client.from('schedules').select(),
+        _client.from('quests').select(),
+        _client.from('routine_plan').select(),
+      ]);
+
+      // The 'responses' list contains the result for each query.
+      final reminders = responses[0] as List<dynamic>;
+      final schedules = responses[1] as List<dynamic>;
+      final quests = responses[2] as List<dynamic>;
+      final routinePlans = responses[3] as List<dynamic>;
+
+      // Use the generic 'replaceAll' method to update local DB.
+      // Sanitize the data before inserting it into the local database
+      await _dbHelper.replaceAll('Reminders',
+          reminders.map((e) => _sanitizeRecordForSqlite(e)).toList());
+      await _dbHelper.replaceAll('Schedules',
+          schedules.map((e) => _sanitizeRecordForSqlite(e)).toList());
+      await _dbHelper.replaceAll(
+          'Quests', quests.map((e) => _sanitizeRecordForSqlite(e)).toList());
+      await _dbHelper.replaceAll('Routine_Plan',
+          routinePlans.map((e) => _sanitizeRecordForSqlite(e)).toList());
+
+      print(
+          'Successfully synced ${reminders.length} reminders, ${schedules.length} schedules, ${quests.length} quests, and ${routinePlans.length} routine plans.');
+    } catch (e) {
+      print('Error syncing planning data: $e');
+    }
   }
 
   /// Reads all local status records, transforms them, and uploads to Supabase.
