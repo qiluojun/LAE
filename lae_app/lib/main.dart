@@ -145,6 +145,137 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  // 新增：处理测试提醒的函数
+  Future<void> _handleTestNotification() async {
+    debugPrint('开始设置测试提醒...');
+    try {
+      await notificationService.scheduleTestNotification();
+      debugPrint('测试提醒设置成功！');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('测试提醒已设置！10秒后将弹出提醒。')),
+        );
+      }
+    } catch (e) {
+      debugPrint('设置测试提醒时出错: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('设置提醒失败: $e')),
+        );
+      }
+    }
+  }
+
+  // 新增：处理立即测试提醒的函数
+  Future<void> _handleImmediateTestNotification() async {
+    debugPrint('开始显示立即测试提醒...');
+    try {
+      await notificationService.showImmediateTestNotification();
+      debugPrint('立即测试提醒显示成功！');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('立即测试提醒已显示！')),
+        );
+      }
+    } catch (e) {
+      debugPrint('显示立即测试提醒时出错: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('显示立即提醒失败: $e')),
+        );
+      }
+    }
+  }
+
+  // 新增：处理3秒测试提醒的函数
+  Future<void> _handleShortTestNotification() async {
+    debugPrint('开始设置3秒测试提醒...');
+    try {
+      await notificationService.scheduleShortTestNotification();
+      debugPrint('3秒测试提醒设置成功！');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('3秒测试提醒已设置！')),
+        );
+      }
+    } catch (e) {
+      debugPrint('设置3秒测试提醒时出错: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('设置3秒提醒失败: $e')),
+        );
+      }
+    }
+  }
+
+  // 新增：处理取消测试提醒的函数
+  Future<void> _handleCancelTestNotifications() async {
+    debugPrint('开始取消所有测试提醒...');
+    try {
+      await notificationService.cancelAllTestNotifications();
+      debugPrint('测试提醒已取消！');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('所有测试提醒已取消！')),
+        );
+      }
+    } catch (e) {
+      debugPrint('取消测试提醒时出错: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('取消提醒失败: $e')),
+        );
+      }
+    }
+  }
+
+  // 新增：处理权限检查的函数
+  Future<void> _handlePermissionCheck() async {
+    debugPrint('开始检查权限...');
+    try {
+      final permissionStatus =
+          await notificationService.checkAndRequestPermissions();
+      debugPrint('权限检查完成: $permissionStatus');
+
+      String message = '权限状态:\n';
+      message +=
+          '通知权限: ${permissionStatus['notification'] == true ? '✅ 已授权' : '❌ 未授权'}\n';
+      message +=
+          '精确闹钟权限: ${permissionStatus['scheduleExactAlarm'] == true ? '✅ 已授权' : '❌ 未授权'}\n';
+      message +=
+          '电池优化白名单: ${permissionStatus['ignoreBatteryOptimizations'] == true ? '✅ 已添加' : '❌ 未添加'}';
+
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('权限检查结果'),
+              content: Text(message),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('确定'),
+                ),
+              ],
+            );
+          },
+        );
+      }
+    } catch (e) {
+      debugPrint('检查权限时出错: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('权限检查失败: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -200,6 +331,61 @@ class _HomePageState extends State<HomePage> {
               child: _isSyncing
                   ? const CircularProgressIndicator(color: Colors.white)
                   : const Text('同步计划与提醒'),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _handleImmediateTestNotification,
+              style: ElevatedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                textStyle: const TextStyle(fontSize: 16),
+                backgroundColor: Colors.green, // 绿色表示立即测试
+              ),
+              child: const Text('立即测试提醒'),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: _handleShortTestNotification,
+              style: ElevatedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                textStyle: const TextStyle(fontSize: 16),
+                backgroundColor: Colors.blue, // 蓝色表示短时间测试
+              ),
+              child: const Text('测试短延时提醒（3秒后）'),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: _handleTestNotification,
+              style: ElevatedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                textStyle: const TextStyle(fontSize: 16),
+                backgroundColor: Colors.orange, // 橙色表示延时测试
+              ),
+              child: const Text('测试延时提醒（10秒后）'),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: _handlePermissionCheck,
+              style: ElevatedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                textStyle: const TextStyle(fontSize: 16),
+                backgroundColor: Colors.purple, // 紫色表示权限检查
+              ),
+              child: const Text('检查和请求权限'),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: _handleCancelTestNotifications,
+              style: ElevatedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                textStyle: const TextStyle(fontSize: 16),
+                backgroundColor: Colors.red, // 红色表示取消
+              ),
+              child: const Text('取消所有测试提醒'),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
