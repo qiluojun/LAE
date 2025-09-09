@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(flutter:*)"
+      "Bash(flutter:*)",
+      "WebSearch",
+      "Bash(adb logcat:*)"
     ],
     "deny": [],
     "ask": []

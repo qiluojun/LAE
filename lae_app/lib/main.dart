@@ -6,6 +6,7 @@ import 'package:lae_app/pages/status_survey_page.dart';
 import 'package:lae_app/pages/records_display_page.dart';
 import 'package:lae_app/services/supabase_service.dart'; // Import Supabase service
 import 'package:lae_app/pages/planning_data_display_page.dart'; // Import the new page
+import 'package:lae_app/pages/alarm_test_page.dart'; // Import alarm test page
 
 // 全局变量，方便在其他地方访问服务实例
 final NotificationService notificationService = NotificationService();
@@ -103,6 +104,14 @@ class _HomePageState extends State<HomePage> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const PlanningDataDisplayPage()),
+    );
+  }
+
+  // Add navigation to alarm test page
+  void _navigateToAlarmTestPage(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const AlarmTestPage()),
     );
   }
 
@@ -319,6 +328,17 @@ class _HomePageState extends State<HomePage> {
                 textStyle: const TextStyle(fontSize: 18),
               ),
               child: const Text('查看计划数据'),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () => _navigateToAlarmTestPage(context),
+              style: ElevatedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                textStyle: const TextStyle(fontSize: 18),
+                backgroundColor: Colors.deepPurple,
+              ),
+              child: const Text('🚨 AlarmManager测试'),
             ),
             const SizedBox(height: 20),
             ElevatedButton(

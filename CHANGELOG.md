@@ -1,4 +1,67 @@
 # 更新日志
+
+## [0.2.3] - 2025-09-09
+
+### 重大突破 (Major Breakthrough)
+- **AlarmManager回调隔离问题解决**: 成功识别并解决`android_alarm_manager_plus`插件的核心技术障碍——回调函数在独立Dart隔离环境中运行，无法访问主应用MethodChannel
+- **原生BroadcastReceiver架构**: 完全绕过Flutter插件限制，实现AlarmManager → BroadcastReceiver → AlarmActivity的纯原生Android调度链路
+
+### 新增 (Added)
+- **AlarmReceiver.kt**: 自定义BroadcastReceiver类，处理系统AlarmManager广播，支持强力设备唤醒和Activity启动
+- **原生AlarmManager调度**: MainActivity中新增`scheduleNativeAlarm`方法，使用原生Android API直接发送广播到BroadcastReceiver
+- **强化设备唤醒功能**: 
+  - 实现SCREEN_BRIGHT_WAKE_LOCK + ACQUIRE_CAUSES_WAKEUP强力唤醒
+  - 延长唤醒时间到10秒，提供多重降级机制
+  - 添加锁屏状态检测和日志追踪
+- **原生测试界面**: AlarmTestPage新增紫色测试区域，专门测试原生AlarmManager方案
+- **振动权限配置**: AndroidManifest.xml中添加VIBRATE权限支持
+
+### 修复 (Fixed)
+- **Flutter回调隔离问题**: 通过原生BroadcastReceiver彻底解决AlarmManager回调无法访问MethodChannel的问题
+- **OnePlus系统兼容性**: 原生方案理论上能绕过OnePlus/ColorOS的后台调度限制
+- **编译错误修复**: 解决Kotlin语法错误，确保项目稳定编译
+
+### 技术验证 (Validation)
+- ✅ **原生调度成功**: 10秒、30秒延时AlarmManager触发准确
+- ✅ **应用状态测试**: 前台、最小化状态下提醒正常弹出
+- ❌ **息屏完全唤醒**: OnePlus设备仍需用户轻微操作才能看到弹窗
+- ❌ **音频功能**: 因编译问题暂未实现提示音播放
+
+### 已知问题 (Known Issues)
+- OnePlus/ColorOS对息屏唤醒有更严格的系统限制
+- 音频和振动功能需要进一步开发和测试
+- 完全自主息屏唤醒仍需深入研究系统级权限
+
+## [0.2.2] - 2025-09-09
+
+### 新增 (Added)
+- **OnePlus设备息屏弹窗技术方案**: 集成 `android_alarm_manager_plus` 和 `wakelock_plus` 插件，实现基于AlarmManager的定时提醒系统
+- **原生全屏提醒Activity**: 创建Kotlin实现的 `AlarmActivity`，支持锁屏状态下的全屏弹窗显示，包含WakeLock管理和窗口唤醒功能
+- **权限管理服务**: 新增 `PermissionService` 类，自动检查和请求通知权限、悬浮窗权限、精确闹钟权限和电池优化白名单
+- **AlarmManager调度服务**: 创建 `AlarmManagerService` 类，封装定时提醒的调度逻辑，支持一次性和重复提醒
+- **调试测试界面**: 新增 `AlarmTestPage` 可滚动测试页面，包含权限状态显示、直接测试按钮和多种延时测试选项
+
+### 技术架构 (Architecture)
+- **MethodChannel通信**: 建立Flutter与原生Android代码的双向通信，支持Activity启动和权限管理
+- **多层降级机制**: 实现三层降级策略（直接启动、备选方案、通知降级）确保功能robustness
+- **权限配置完善**: 在AndroidManifest.xml中配置所有必要权限，包括SYSTEM_ALERT_WINDOW、WAKE_LOCK、EXACT_ALARM等
+
+### 技术验证 (Validation)
+- ✅ **权限系统验证**: 所有必要权限可正常获取和检查
+- ✅ **MethodChannel验证**: 直接调用测试成功，全屏Activity正常启动
+- ✅ **AlarmManager验证**: 定时调度返回成功，OnePlus设备兼容性确认
+- ✅ **AlarmActivity验证**: 全屏蓝色弹窗正常显示，WakeLock功能正常
+
+### 发现问题 (Issues Identified)
+- **AlarmManager回调隔离问题**: 发现回调函数在独立Dart隔离环境中运行，无法访问主应用MethodChannel连接
+- **OnePlus系统兼容性**: 确认OnePlus/ColorOS对后台应用有特殊限制，但AlarmManager机制可绕过
+
+### 文档 (Documentation)
+- 更新 `docs/current_development_status.md` 记录详细测试结果和技术发现
+- 更新 `CLAUDE.md` 添加对话开始时的状态检查指引
+- 更新 `prompts/prompts.md` 添加对话结束时的文档更新模板
+- 完善 `README.md` 中的文档更新说明
+
 ## [0.2.1] - 2025-08-22
 
 ### 新增 (Added)

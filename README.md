@@ -87,6 +87,10 @@ Fitbit 手表 依然作为主要的 被动数据采集端点。
 - "更新整个项目结构"
 - "仅更新src文件夹的结构"
 - "更新lae_app文件夹的Flutter项目结构"
+
+对话结束时文档更新：
+- 使用 prompts/prompts.md 中的"对话结束时文档更新总结"指令
+- 或直接使用简化版本："生成（或更新）今天的开发记录（CHANGELOG），以及README里的程序框架描述"
 ```
 
 ---
@@ -125,18 +129,28 @@ LAE-System/
 │   ├── pubspec.lock          <-- 依赖锁定文件
 │   ├── README.md             <-- Flutter应用说明
 │   ├── android/              <-- Android平台配置
+│   │   └── app/src/main/
+│   │       ├── kotlin/com/example/lae_app/
+│   │       │   ├── MainActivity.kt <-- 主Activity，处理MethodChannel通信和原生AlarmManager
+│   │       │   ├── AlarmActivity.kt <-- 全屏提醒Activity，支持息屏弹窗和WakeLock管理
+│   │       │   └── AlarmReceiver.kt <-- 原生BroadcastReceiver，处理AlarmManager广播
+│   │       └── res/layout/
+│   │           └── activity_alarm.xml <-- AlarmActivity布局文件
 │   ├── build/                <-- 构建输出目录
 │   ├── ios/                  <-- iOS平台配置
 │   ├── lib/
 │   │   ├── models/
 │   │   │   └── status_record.dart <-- 状态记录数据模型
 │   │   ├── pages/
+│   │   │   ├── alarm_test_page.dart <-- AlarmManager功能测试页面
 │   │   │   ├── planning_data_display_page.dart <-- 同步的计划数据只读展示页面
 │   │   │   ├── records_display_page.dart <-- 历史记录展示UI页面
 │   │   │   └── status_survey_page.dart <-- 状态问卷UI页面
 │   │   ├── services/
+│   │   │   ├── alarm_manager_service.dart <-- AlarmManager定时提醒服务类
 │   │   │   ├── database_helper.dart <-- 本地数据库辅助类
 │   │   │   ├── notification_service.dart <-- 本地通知服务类
+│   │   │   ├── permission_service.dart <-- Android权限管理服务类
 │   │   │   └── supabase_service.dart <-- Supabase云端同步服务类
 │   │   └── main.dart         <-- Flutter应用主入口
 │   ├── linux/                <-- Linux平台配置
@@ -172,10 +186,13 @@ Flutter跨平台移动应用，主要功能：
   - **`status_survey_page.dart`**: 每日状态问卷的UI界面，使用单选、滑块和文本框等多种控件收集用户输入。
   - **`records_display_page.dart`**: 用于从本地数据库读取并以列表和弹窗形式展示历史状态记录的UI界面。
   - **`planning_data_display_page.dart`**: 一个只读页面，用于展示从云端同步到本地的所有规划数据（任务、日程、作息、提醒），方便验证数据同步的正确性。
+  - **`alarm_test_page.dart`**: AlarmManager功能测试页面，提供权限状态检查、直接测试和多种延时测试功能，用于调试和验证定时提醒系统。
 - **`lib/services/`**: 存放后台服务类，如API请求、数据库操作、通知等。
   - **`database_helper.dart`**: 本地SQLite数据库的辅助类，封装了数据库的初始化、版本迁移（`onUpgrade`）和对所有表的CRUD（增删改查）操作。
   - **`notification_service.dart`**: 负责处理本地定时通知的创建和调度。
   - **`supabase_service.dart`**: 负责与Supabase云端进行双向数据同步。它既能将本地的问卷数据上传到云端，也能从云端拉取最新的规划数据并存入本地数据库。
+  - **`alarm_manager_service.dart`**: AlarmManager定时提醒服务类，封装了基于android_alarm_manager_plus和原生AlarmManager的双重定时调度逻辑，支持一次性和重复提醒，包含回调隔离问题的解决方案。
+  - **`permission_service.dart`**: 权限管理服务类，提供自动检查和请求Android权限的功能，包括通知、悬浮窗、精确闹钟、电池优化和振动权限。
 - **用户界面**: 状态输入、活动展示、干预提醒等。
 - **数据交互**: 与后端Python脚本的数据交换。
 - **多平台支持**: Android、iOS、Web、Desktop。
@@ -200,4 +217,12 @@ Flutter跨平台移动应用，主要功能：
 ---
 
 
-*最后更新时间: 2025-08-22*
+### 8. Android原生组件 (`lae_app/android/`)
+- **`MainActivity.kt`**: 主Activity类，处理Flutter与Android原生代码的MethodChannel通信，包括原生AlarmManager调度功能和权限管理。包含scheduleNativeAlarm方法来绕过Flutter插件的回调隔离问题。
+- **`AlarmActivity.kt`**: 专用的全屏提醒Activity，实现锁屏状态下的弹窗显示，包含强化WakeLock管理(FULL_WAKE_LOCK + ACQUIRE_CAUSES_WAKEUP)和多种窗口唤醒标志位。
+- **`AlarmReceiver.kt`**: 原生BroadcastReceiver类，接收AlarmManager系统广播并直接启动AlarmActivity。这是解决android_alarm_manager_plus插件回调隔离问题的核心组件，实现了完全原生的定时提醒架构。
+- **`activity_alarm.xml`**: AlarmActivity的UI布局文件，定义全屏提醒的视觉样式，包含标题、内容显示和关闭按钮。
+
+---
+
+*最后更新时间: 2025-09-09*
